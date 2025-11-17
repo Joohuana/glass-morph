@@ -1,4 +1,4 @@
-<script>
+
 
 const canvas = document.getElementById("c");
 const gl = canvas.getContext("webgl");
@@ -549,4 +549,4 @@ function draw(tms) {
 }
 requestAnimationFrame(draw);
 
-</script>
+
