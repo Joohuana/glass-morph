@@ -41,6 +41,9 @@ function handleScroll(e) {
 
 
 function handleScroll(e) {
+  if (document.body.style.overflow === 'hidden') {
+    e.preventDefault();
+    
   if (!hasInteracted) {
     hasInteracted = true;
     // Fade out text after first interaction
@@ -405,6 +408,8 @@ const uScrollProgress = gl.getUniformLocation(prog, "uScrollProgress");
     let mouseSm = [canvas.width / 2, canvas.height / 2];
     let mouseFactorTarget = 0;
 
+// Prevent page scroll initially
+document.body.style.overflow = 'hidden';
 
 function draw(tms) {
   gl.clearColor(0, 0, 0, 0);
@@ -426,6 +431,16 @@ function draw(tms) {
       canvas.height - (mouse.y * scaleY)
     ];
   }
+
+
+
+   // Check if 95% cleared and re-enable scrolling
+  if (scrollProgress > maxScroll * 0.95 && document.body.style.overflow === 'hidden') {
+    document.body.style.overflow = 'auto';
+    // Optional: Show a subtle indicator that scrolling is now enabled
+    console.log('Page scrolling enabled');
+  }
+
 
   const k = 1.0 - Math.exp(-0.25);
   mouseSm[0] += (mouseTarget[0] - mouseSm[0]) * k;
