@@ -126,6 +126,8 @@ function hideOverlay() {
     animationId = null;
   }
   
+
+
   // === ADD THIS CODE ===
   // Disable pointer events on the iframe itself
     if (window.frameElement && window.frameElement.parentNode) {
@@ -166,11 +168,13 @@ function hideOverlay() {
     textElement.parentNode.removeChild(textElement);
   }
   
-  // Force enable scrolling on body
-  document.body.style.overflow = 'auto';
-  document.body.style.position = 'static';
-  document.documentElement.style.overflow = 'auto';
-  document.documentElement.style.height = 'auto';
+  // Make the entire document body shrink/collapse
+  document.body.style.width = '0';
+  document.body.style.height = '0';
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.width = '0';
+  document.documentElement.style.height = '0';
+
 
     // Force reflow to ensure styles are applied
   document.body.getBoundingClientRect();
