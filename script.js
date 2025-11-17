@@ -128,21 +128,30 @@ function hideOverlay() {
   
 
   
-  // Completely remove the canvas from DOM with transition
+// Disable pointer events on your content
+  document.body.style.pointerEvents = 'none';
+  document.documentElement.style.pointerEvents = 'none';
+  
+  
+    
+    
+  // Remove canvas with transition
   if (canvas) {
     canvas.style.transition = 'opacity 0.5s ease';
     canvas.style.opacity = '0';
     
     setTimeout(() => {
+      // Remove canvas after fade out
       if (canvas.parentNode) {
         canvas.parentNode.removeChild(canvas);
       }
-  
+      
       // Change URL fragment to signal unlock
-  window.location.hash = 'unlocked';
-    console.log('Redirected to pointer-events disabled page');
+      window.location.hash = 'unlocked';
+      console.log('Canvas removed and URL hash set to #unlocked');
     }, 500);
   }
+  
   
   window.removeEventListener('wheel', preventDefaultScroll);
   window.removeEventListener('touchmove', preventDefaultScroll);
@@ -213,6 +222,11 @@ if (!gl) {
   alert("WebGL not supported");
   throw new Error("WebGL not supported");
 }
+
+
+// When your glass morph loads, enable pointer events temporarily
+document.body.style.pointerEvents = 'auto';
+document.documentElement.style.pointerEvents = 'auto';
 
 function resize() {
   if (isOverlayHidden) return;
