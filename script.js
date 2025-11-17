@@ -1,8 +1,7 @@
-
 // Device detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 const textElement = document.createElement('div');
-textElement.innerHTML = isMobile ? 'Swipe to reveal' : 'Scroll to reveal';
+textElement.innerHTML = isMobile ? '↑ Swipe to reveal ↑' : 'Scroll to reveal';
 Object.assign(textElement.style, {
   position: 'fixed',
   top: '50%',
@@ -33,10 +32,11 @@ let targetScrollProgress = 0;
 const maxScroll = 1000; // Adjust based on your page content
 let hasInteracted = false;
 let isScrollLocked = true; // Start with scroll locked
+let isOverlayHidden = false;
 
 // Prevent default scroll behavior
 function preventDefaultScroll(e) {
-  if (isScrollLocked) {
+  if (isScrollLocked && !isOverlayHidden) {
     e.preventDefault();
     e.stopPropagation();
     return false;
@@ -51,6 +51,8 @@ document.addEventListener('gesturechange', preventDefaultScroll);
 document.addEventListener('gestureend', preventDefaultScroll);
 
 function handleScroll(e) {
+  if (isOverlayHidden) return; // Ignore if overlay is already hidden
+  
   if (!hasInteracted) {
     hasInteracted = true;
     // Fade out text after first interaction
@@ -72,6 +74,8 @@ function handleScroll(e) {
 }
 
 function handleTouch(e) {
+  if (isOverlayHidden) return; // Ignore if overlay is already hidden
+  
   if (!hasInteracted) {
     hasInteracted = true;
     textElement.style.opacity = '0';
@@ -91,6 +95,8 @@ function handleTouch(e) {
 
 // Add click/tap to dismiss text on mobile
 function handleClick() {
+  if (isOverlayHidden) return;
+  
   if (!hasInteracted) {
     hasInteracted = true;
     textElement.style.opacity = '0';
@@ -105,13 +111,46 @@ window.addEventListener("wheel", handleScroll, { passive: false });
 window.addEventListener("touchmove", handleTouch, { passive: false });
 window.addEventListener("click", handleClick);
 
+function hideOverlay() {
+  if (isOverlayHidden) return;
+  
+  isOverlayHidden = true;
+  isScrollLocked = false;
+  
+  // Hide the canvas with transition
+  canvas.classList.add('hidden');
+  
+  // Remove all event listeners
+  window.removeEventListener('wheel', preventDefaultScroll);
+  window.removeEventListener('touchmove', preventDefaultScroll);
+  window.removeEventListener("wheel", handleScroll);
+  window.removeEventListener("touchmove", handleTouch);
+  window.removeEventListener("click", handleClick);
+  window.removeEventListener("mousemove", mousemove);
+  window.removeEventListener("touchmove", touchmove);
+  window.removeEventListener("mouseout", mouseout);
+  window.removeEventListener("touchend", mouseout);
+  document.removeEventListener('gesturestart', preventDefaultScroll);
+  document.removeEventListener('gesturechange', preventDefaultScroll);
+  document.removeEventListener('gestureend', preventDefaultScroll);
+  
+  // Remove text element
+  if (textElement.parentNode) {
+    textElement.parentNode.removeChild(textElement);
+  }
+  
+  console.log('Overlay hidden - normal page interaction restored');
+}
+
 function mousemove(e) {
+  if (isOverlayHidden) return;
   const rect = canvas.getBoundingClientRect();
   mouse.x = (e.clientX - rect.left);
   mouse.y = (e.clientY - rect.top);
 }
 
 function touchmove(e) {
+  if (isOverlayHidden) return;
   if (e.touches && e.touches.length > 0) {
     const rect = canvas.getBoundingClientRect();
     mouse.x = (e.touches[0].clientX - rect.left);
@@ -120,6 +159,7 @@ function touchmove(e) {
 }
 
 function mouseout() {
+  if (isOverlayHidden) return;
   mouse.x = undefined;
   mouse.y = undefined;
 }
@@ -141,6 +181,7 @@ if (!gl) {
 }
 
 function resize() {
+  if (isOverlayHidden) return;
   const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const w = Math.floor(innerWidth * dpr),
     h = Math.floor(innerHeight * dpr);
@@ -429,6 +470,8 @@ const uScrollProgress = gl.getUniformLocation(prog, "uScrollProgress");
 
 
 function draw(tms) {
+  if (isOverlayHidden) return; // Stop drawing if overlay is hidden
+  
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   
@@ -440,15 +483,9 @@ function draw(tms) {
 
   // Check if scroll effect is nearly complete (90% threshold)
   const scrollThreshold = maxScroll * 0.9;
-  if (scrollProgress >= scrollThreshold && isScrollLocked) {
-    isScrollLocked = false;
-    // Remove scroll prevention when effect is nearly complete
-    window.removeEventListener('wheel', preventDefaultScroll);
-    window.removeEventListener('touchmove', preventDefaultScroll);
-    document.removeEventListener('gesturestart', preventDefaultScroll);
-    document.removeEventListener('gesturechange', preventDefaultScroll);
-    document.removeEventListener('gestureend', preventDefaultScroll);
-    console.log('Scroll unlocked - effect nearly complete');
+  if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
+    // Hide the overlay instead of just unlocking scroll
+    setTimeout(hideOverlay, 300); // Small delay for smooth transition
   }
 
   // Smooth mouse tracking
