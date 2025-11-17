@@ -1,4 +1,37 @@
-const canvas = document.getElementById("c");
+
+    // Mouse tracking
+    let mouse = {
+      x: undefined,
+      y: undefined,
+      radius: 120
+    };
+
+    function mousemove(e) {
+     const rect = canvas.getBoundingClientRect();
+   mouse.x = (e.clientX - rect.left);
+   mouse.y = (e.clientY - rect.top);
+    }
+
+    function touchmove(e) {
+      if (e.touches && e.touches.length > 0) {
+       const rect = canvas.getBoundingClientRect();
+   mouse.x = (e.touches[0].clientX - rect.left);
+   mouse.y = (e.touches[0].clientY - rect.top);
+      }
+    }
+
+    function mouseout() {
+      mouse.x = undefined;
+      mouse.y = undefined;
+    }
+
+    window.addEventListener("mousemove", mousemove);
+    window.addEventListener("touchmove", touchmove);
+    window.addEventListener("mouseout", mouseout);
+    window.addEventListener("touchend", mouseout);
+
+    // WebGL Glass Morph
+    const canvas = document.getElementById("c");
     const gl = canvas.getContext("webgl");
     if (!gl) {
       alert("WebGL not supported");
@@ -40,6 +73,9 @@ const canvas = document.getElementById("c");
       uniform float uUVScale, uEnableRipple;
       uniform vec2  uRippleC;
       uniform float uRippleT;
+      uniform float uMouseRadius;
+      uniform float uMousePullStrength;
+      uniform float uMouseInfluence;
 
       varying vec2 vUV;
 
@@ -109,7 +145,8 @@ const canvas = document.getElementById("c");
 
       void main(){
         vec2 res=iResolution, frag=gl_FragCoord.xy, p=frag-0.5*res, uv=vUV;
-        
+        vec2 mp=iMouse-0.5*res;
+
         vec2 uvw=(uv-0.5)/max(1.0e-3,uUVScale) + uUVOffset + 0.5;
 
         float cell=max(6.0,uCell);
@@ -117,12 +154,28 @@ const canvas = document.getElementById("c");
         float wave=(uAnimate>0.5)?(sin(p.x*0.01 + p.y*0.015 + t)*0.25):0.0;
         float localCell=cell*(1.0+wave*0.2);
 
+        // Mouse pull effect (like particle repulsion)
+        vec2 mousePull = vec2(0.0);
+        float distToMouse = length(p - mp);
+        if (distToMouse < uMouseRadius) {
+          float force = (uMouseRadius - distToMouse) / uMouseRadius; // 0 ~ 1
+          vec2 forceDir = normalize((p - mp) + 1e-6);
+          mousePull = -forceDir * force * uMousePullStrength;
+        }
+        
+        vec2 pulledP = p + mousePull;
+        
+        // Mouse influence on cell size
+        float mouseInfluence = smoothstep(uMouseRadius, 0.0, distToMouse) * uMouseInfluence;
+        float scaledCell = localCell * (1.0 + mouseInfluence * 0.5);
+        
         vec2 c, lp; 
-        nearestCenter(p, localCell, c, lp);
-        float d = shapeSDF(lp, localCell);
+        nearestCenter(pulledP, scaledCell, c, lp);
+        
+        float d = shapeSDF(lp, scaledCell);
         float inside = smoothstep(0.0, 1.5, -d);
 
-        float rad = clamp(length(lp) / (cell*0.95), 0.0, 1.0);
+        float rad = clamp(length(lp) / (scaledCell*0.95), 0.0, 1.0);
         vec2 n = normalize(lp + 1e-6);
 
         float ripple=0.0; 
@@ -136,7 +189,15 @@ const canvas = document.getElementById("c");
           rippleDir=normalize(p-cp+1e-6);
         }
 
-        vec3 base=blur(uvw, uBlur);
+        // Calculate blur amount - erased in mouse area
+        float eraserMask = smoothstep(uMouseRadius, uMouseRadius * 0.6, distToMouse);
+        float blurAmount = uBlur * eraserMask;
+        
+        vec3 base=blur(uvw, blurAmount);
+        // Add clear unblurred sample in eraser area
+        vec3 clear = sampleImage(uvw);
+        base = mix(clear, base, eraserMask);
+        
         float strength=uAmp*(1.0-pow(rad,1.4))*0.07;
         vec2 refr=n*strength + rippleDir*(0.02*ripple);
 
@@ -147,7 +208,7 @@ const canvas = document.getElementById("c");
         glass.g=sampleImage(uvw+refr).g;
         glass.b=sampleImage(uvw+refr-ca*ca2).b;
 
-        vec2 L=normalize(vec2(0.7,1.0));
+        vec2 L=normalize(mp);
         float spec=pow(max(0.0,dot(normalize(L),n)),14.0)*(1.0-rad);
         glass+=vec3(1.0,0.96,0.9)*spec*0.45;
 
@@ -207,6 +268,9 @@ const canvas = document.getElementById("c");
     const uEnableRipple = gl.getUniformLocation(prog, "uEnableRipple");
     const uRippleC = gl.getUniformLocation(prog, "uRippleC");
     const uRippleT = gl.getUniformLocation(prog, "uRippleT");
+    const uMouseRadius = gl.getUniformLocation(prog, "uMouseRadius");
+    const uMousePullStrength = gl.getUniformLocation(prog, "uMousePullStrength");
+    const uMouseInfluence = gl.getUniformLocation(prog, "uMouseInfluence");
     const uTex0 = gl.getUniformLocation(prog, "iChannel0");
     gl.uniform1i(uTex0, 0);
 
@@ -230,7 +294,7 @@ const canvas = document.getElementById("c");
       new Uint8Array([0, 0, 0, 255])
     );
 
-    const DEFAULT_VIDEO = "";
+    const DEFAULT_VIDEO = "https://static1.squarespace.com/static/67aa4566bfa0580c727bce8b/t/691adbd2999b480054240a54/1763367893311/hero_+fire.mp4";
 
     let videoEl = null,
       videoReady = false;
@@ -256,14 +320,16 @@ const canvas = document.getElementById("c");
 
     // Hardcoded settings
     const glass = 0.6;      // uAmp
-    const chromatic = 0.2;  // uChrom
+    const chromatic = 0.4;  // uChrom
     const breathSpeed = 0.2; // uSpeed
     const cellSize = 2;    // uCell
     const animate = true;   // Enable wave animation
-    const blur = 19.0;       // Video blur amount (0 = no blur, increase for more blur)
+    const blur = 8.0;       // Video blur amount
     
     let uvOffset = { x: 0, y: 0 };
     let uvScale = 1.0;
+    let mouseSm = [canvas.width / 2, canvas.height / 2];
+    let mouseFactorTarget = 0;
 
     setupVideo(DEFAULT_VIDEO);
 
@@ -283,10 +349,20 @@ const canvas = document.getElementById("c");
         );
       }
 
+      // Smooth mouse tracking
+      let mouseTarget = [canvas.width / 2, canvas.height / 2];
+      if (mouse.x !== undefined && mouse.y !== undefined) {
+     mouseTarget = [mouse.x, canvas.height - mouse.y];
+      }
+
+      const k = 1.0 - Math.exp(-0.25);
+      mouseSm[0] += (mouseTarget[0] - mouseSm[0]) * k;
+      mouseSm[1] += (mouseTarget[1] - mouseSm[1]) * k;
+
       gl.useProgram(prog);
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform1f(uTime, t);
-      gl.uniform2f(uMouse, -1, -1);
+      gl.uniform2f(uMouse, mouseSm[0], mouseSm[1]);
 
       gl.uniform1f(uCell, cellSize);
       gl.uniform1f(uAmp, glass);
@@ -301,6 +377,10 @@ const canvas = document.getElementById("c");
       gl.uniform1f(uEnableRipple, 0.0);
       gl.uniform2f(uRippleC, -1, -1);
       gl.uniform1f(uRippleT, 0);
+
+      gl.uniform1f(uMouseInfluence, 1.0);
+      gl.uniform1f(uMouseRadius, 150.0);
+      gl.uniform1f(uMousePullStrength, 30.0);
 
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       requestAnimationFrame(draw);
