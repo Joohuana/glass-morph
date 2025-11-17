@@ -30,7 +30,10 @@
 
     // WebGL Glass Morph
     const canvas = document.getElementById("c");
-   const gl = canvas.getContext("webgl", { alpha: true });
+   const gl = canvas.getContext("webgl", { 
+  alpha: true,
+  premultipliedAlpha: false
+});
     if (!gl) {
       alert("WebGL not supported");
       throw new Error("WebGL not supported");
