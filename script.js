@@ -1,5 +1,3 @@
-
-    // Mouse tracking
     let mouse = {
       x: undefined,
       y: undefined,
@@ -7,16 +5,16 @@
     };
 
     function mousemove(e) {
-     const rect = canvas.getBoundingClientRect();
-   mouse.x = (e.clientX - rect.left);
-   mouse.y = (e.clientY - rect.top);
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left);
+      mouse.y = (e.clientY - rect.top);
     }
 
     function touchmove(e) {
       if (e.touches && e.touches.length > 0) {
-       const rect = canvas.getBoundingClientRect();
-   mouse.x = (e.touches[0].clientX - rect.left);
-   mouse.y = (e.touches[0].clientY - rect.top);
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = (e.touches[0].clientX - rect.left);
+        mouse.y = (e.touches[0].clientY - rect.top);
       }
     }
 
@@ -157,6 +155,11 @@
         // Mouse pull effect (like particle repulsion)
         vec2 mousePull = vec2(0.0);
         float distToMouse = length(p - mp);
+        
+        // Calculate blur amount - de-blur in mouse area (inverted logic)
+float eraserMask = smoothstep(uMouseRadius, uMouseRadius * 0.5, distToMouse);
+float blurAmount = uBlur * (1.0 - eraserMask);
+        
         if (distToMouse < uMouseRadius) {
           float force = (uMouseRadius - distToMouse) / uMouseRadius; // 0 ~ 1
           vec2 forceDir = normalize((p - mp) + 1e-6);
@@ -188,10 +191,6 @@
           ripple=sin(R*0.06 - dt*6.0)*env;
           rippleDir=normalize(p-cp+1e-6);
         }
-
-        // Calculate blur amount - erased in mouse area
-        float eraserMask = smoothstep(uMouseRadius, uMouseRadius * 0.6, distToMouse);
-        float blurAmount = uBlur * eraserMask;
         
         vec3 base=blur(uvw, blurAmount);
         // Add clear unblurred sample in eraser area
@@ -212,7 +211,8 @@
         float spec=pow(max(0.0,dot(normalize(L),n)),14.0)*(1.0-rad);
         glass+=vec3(1.0,0.96,0.9)*spec*0.45;
 
-        vec3 col=mix(base,glass,inside);
+   float glassEffect = inside * (1.0 - eraserMask);
+vec3 col = mix(base, glass, glassEffect);
 
         float vign=smoothstep(1.2,0.2,length((frag-0.5*res)/res.y));
         col*=mix(0.9,1.0,vign);
@@ -294,7 +294,7 @@
       new Uint8Array([0, 0, 0, 255])
     );
 
-    const DEFAULT_VIDEO = "https://static1.squarespace.com/static/67aa4566bfa0580c727bce8b/t/691adbd2999b480054240a54/1763367893311/hero_+fire.mp4";
+    const DEFAULT_VIDEO = "";
 
     let videoEl = null,
       videoReady = false;
@@ -331,7 +331,7 @@
     let mouseSm = [canvas.width / 2, canvas.height / 2];
     let mouseFactorTarget = 0;
 
-    setupVideo(DEFAULT_VIDEO);
+
 
     function draw(tms) {
       resize();
@@ -349,10 +349,16 @@
         );
       }
 
-      // Smooth mouse tracking
+      // Smooth mouse tracking with proper coordinate conversion
       let mouseTarget = [canvas.width / 2, canvas.height / 2];
       if (mouse.x !== undefined && mouse.y !== undefined) {
-     mouseTarget = [mouse.x, canvas.height - mouse.y];
+        // Convert from CSS pixels to WebGL pixels and flip Y coordinate
+        const scaleX = canvas.width / canvas.clientWidth;
+        const scaleY = canvas.height / canvas.clientHeight;
+        mouseTarget = [
+          mouse.x * scaleX, 
+          canvas.height - (mouse.y * scaleY) // Flip Y for WebGL coordinate system
+        ];
       }
 
       const k = 1.0 - Math.exp(-0.25);
