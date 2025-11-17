@@ -128,12 +128,11 @@ function hideOverlay() {
   
   // === ADD THIS CODE ===
   // Disable pointer events on the iframe itself
-  if (window.frameElement) {
-    console.log('Disabling pointer events on iframe');
-    window.frameElement.style.pointerEvents = 'none';
+    if (window.frameElement && window.frameElement.parentNode) {
+          console.log('Removing iframe from DOM');
+
+      window.frameElement.parentNode.removeChild(window.frameElement);
     
-    // Optional: Also make it invisible to clicks
-    window.frameElement.style.zIndex = '-1';
   }
   
   // Completely remove the canvas from DOM with transition
