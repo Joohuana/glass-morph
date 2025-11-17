@@ -54,16 +54,20 @@ function handleScroll(e) {
 }
 
 function handleTouch(e) {
-  if (!hasInteracted) {
-    hasInteracted = true;
-    textElement.style.opacity = '0';
-    setTimeout(() => {
-      textElement.style.display = 'none';
-    }, 500);
-  }
-  
-  if (e.touches && e.touches.length > 0) {
-    targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
+  if (document.body.style.overflow === 'hidden') {
+    e.preventDefault(); // Add this line
+    
+    if (!hasInteracted) {
+      hasInteracted = true;
+      textElement.style.opacity = '0';
+      setTimeout(() => {
+        textElement.style.display = 'none';
+      }, 500);
+    }
+    
+    if (e.touches && e.touches.length > 0) {
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
+    }
   }
 }
 
@@ -80,8 +84,9 @@ function handleClick() {
 
 window.addEventListener("click", handleClick);
 window.addEventListener("touchstart", handleClick);
-window.addEventListener("wheel", handleScroll);
-window.addEventListener("touchmove", handleTouch);
+// Use non-passive event listeners to allow preventDefault
+window.addEventListener("wheel", handleScroll, { passive: false });
+window.addEventListener("touchmove", handleTouch, { passive: false });
 
 function mousemove(e) {
   const rect = canvas.getBoundingClientRect();
