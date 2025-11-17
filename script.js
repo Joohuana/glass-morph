@@ -1,7 +1,7 @@
 // Device detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 const textElement = document.createElement('div');
-textElement.innerHTML = isMobile ? '↑ Swipe to reveal ↑' : 'Scroll to reveal';
+textElement.innerHTML = isMobile ? '↑ Swipe to unlock' : 'Scroll to unlock';
 Object.assign(textElement.style, {
   position: 'fixed',
   top: '50%',
@@ -33,6 +33,7 @@ const maxScroll = 1000; // Adjust based on your page content
 let hasInteracted = false;
 let isScrollLocked = true; // Start with scroll locked
 let isOverlayHidden = false;
+let animationId = null;
 
 // Prevent default scroll behavior
 function preventDefaultScroll(e) {
@@ -117,29 +118,55 @@ function hideOverlay() {
   isOverlayHidden = true;
   isScrollLocked = false;
   
-  // Hide the canvas with transition
-  canvas.classList.add('hidden');
+  console.log('Hiding overlay completely');
   
-  // Remove all event listeners
+  // Stop the animation loop immediately
+if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+  
+  // Completely remove the canvas from DOM with transition
+  if (canvas) {
+    canvas.style.transition = 'opacity 0.5s ease';
+    canvas.style.opacity = '0';
+    
+    setTimeout(() => {
+      if (canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
+      }
+    }, 500);
+  }
+  
   window.removeEventListener('wheel', preventDefaultScroll);
   window.removeEventListener('touchmove', preventDefaultScroll);
   window.removeEventListener("wheel", handleScroll);
   window.removeEventListener("touchmove", handleTouch);
   window.removeEventListener("click", handleClick);
   window.removeEventListener("mousemove", mousemove);
-  window.removeEventListener("touchmove", touchmove);
+  window.removeEventListener("touchmove", touchmove); // Fixed: removed duplicate
   window.removeEventListener("mouseout", mouseout);
   window.removeEventListener("touchend", mouseout);
+  window.removeEventListener("resize", resize);
   document.removeEventListener('gesturestart', preventDefaultScroll);
   document.removeEventListener('gesturechange', preventDefaultScroll);
   document.removeEventListener('gestureend', preventDefaultScroll);
   
   // Remove text element
-  if (textElement.parentNode) {
+  if (textElement && textElement.parentNode) {
     textElement.parentNode.removeChild(textElement);
   }
   
-  console.log('Overlay hidden - normal page interaction restored');
+  // Force enable scrolling on body
+  document.body.style.overflow = 'auto';
+  document.body.style.height = 'auto';
+  document.body.style.position = 'static';
+  document.documentElement.style.overflow = 'auto';
+  document.documentElement.style.height = 'auto';
+
+    // Force reflow to ensure styles are applied
+  document.body.getBoundingClientRect();
+  
 }
 
 function mousemove(e) {
@@ -470,7 +497,14 @@ const uScrollProgress = gl.getUniformLocation(prog, "uScrollProgress");
 
 
 function draw(tms) {
-  if (isOverlayHidden) return; // Stop drawing if overlay is hidden
+  if (isOverlayHidden) {
+    // Stop the animation loop if overlay is hidden
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+            animationId = null;
+    }
+    return;
+  }
   
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -484,8 +518,9 @@ function draw(tms) {
   // Check if scroll effect is nearly complete (90% threshold)
   const scrollThreshold = maxScroll * 0.9;
   if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
-    // Hide the overlay instead of just unlocking scroll
-    setTimeout(hideOverlay, 300); // Small delay for smooth transition
+      console.log('Scroll complete - hiding overlay');
+    hideOverlay();
+    return; // Stop this frame
   }
 
   // Smooth mouse tracking
@@ -528,6 +563,6 @@ function draw(tms) {
   gl.uniform1f(uMousePullStrength, 30.0);
 
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  requestAnimationFrame(draw);
+  animationId = requestAnimationFrame(draw);
 }
-requestAnimationFrame(draw);
+animationId = requestAnimationFrame(draw);
