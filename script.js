@@ -216,7 +216,7 @@ float blurAmount = uBlur * (1.0 - eraserMask);
 
    float glassEffect = inside * (1.0 - eraserMask);
 // Change the final output to be transparent where there's no glass
-vec3 col = glass * inside;
+vec3 col = mix(vec3(0.9, 0.9, 0.95), glass, 0.4) * inside;
 
 
         float vign=smoothstep(1.2,0.2,length((frag-0.5*res)/res.y));
