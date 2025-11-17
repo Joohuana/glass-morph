@@ -138,8 +138,9 @@ function hideOverlay() {
         canvas.parentNode.removeChild(canvas);
       }
      // REDIRECT TO BLANK PAGE - This is the key!
-      window.location.href = 'about:blank';
-      console.log('Redirected to blank page - iframe now click-through');
+       const blankPage = 'data:text/html,<html style="pointer-events:none"><body style="pointer-events:none"></body></html>';
+    window.location.href = blankPage;
+    console.log('Redirected to pointer-events disabled page');
     }, 500);
   }
   
