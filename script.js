@@ -127,15 +127,6 @@ function hideOverlay() {
   }
   
 
-
-  // === ADD THIS CODE ===
-  // Disable pointer events on the iframe itself
-    if (window.frameElement && window.frameElement.parentNode) {
-          console.log('Removing iframe from DOM');
-
-      window.frameElement.parentNode.removeChild(window.frameElement);
-    
-  }
   
   // Completely remove the canvas from DOM with transition
   if (canvas) {
@@ -146,6 +137,9 @@ function hideOverlay() {
       if (canvas.parentNode) {
         canvas.parentNode.removeChild(canvas);
       }
+     // REDIRECT TO BLANK PAGE - This is the key!
+      window.location.href = 'about:blank';
+      console.log('Redirected to blank page - iframe now click-through');
     }, 500);
   }
   
