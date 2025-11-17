@@ -32,29 +32,24 @@ let targetScrollProgress = 0;
 const maxScroll = 1000; // Adjust based on your page content
 let hasInteracted = false;
 
-function handleScroll(e) {
-  // For wheel scroll
-  if (e.deltaY) {
-    targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
-  }
-}
 
 
 function handleScroll(e) {
   if (document.body.style.overflow === 'hidden') {
     e.preventDefault();
     
-  if (!hasInteracted) {
-    hasInteracted = true;
-    // Fade out text after first interaction
-    textElement.style.opacity = '0';
-    setTimeout(() => {
-      textElement.style.display = 'none';
-    }, 500);
-  }
-  
+    if (!hasInteracted) {
+      hasInteracted = true;
+      // Fade out text after first interaction
+      textElement.style.opacity = '0';
+      setTimeout(() => {
+        textElement.style.display = 'none';
+      }, 500);
+    }
+    
     if (e.deltaY) {
-    targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
+    }
   }
 }
 
@@ -83,6 +78,8 @@ function handleClick() {
   }
 }
 
+window.addEventListener("click", handleClick);
+window.addEventListener("touchstart", handleClick);
 window.addEventListener("wheel", handleScroll);
 window.addEventListener("touchmove", handleTouch);
 
@@ -474,4 +471,3 @@ function draw(tms) {
   requestAnimationFrame(draw);
 }
 
-}
