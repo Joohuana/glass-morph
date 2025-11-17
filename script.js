@@ -212,7 +212,7 @@ float blurAmount = uBlur * (1.0 - eraserMask);
         glass+=vec3(1.0,0.96,0.9)*spec*0.45;
 
    float glassEffect = inside * (1.0 - eraserMask);
-vec3 col = mix(base, glass, glassEffect);
+vec3 col = glass;
 
         float vign=smoothstep(1.2,0.2,length((frag-0.5*res)/res.y));
         col*=mix(0.9,1.0,vign);
