@@ -30,7 +30,7 @@
 
     // WebGL Glass Morph
     const canvas = document.getElementById("c");
-    const gl = canvas.getContext("webgl");
+   const gl = canvas.getContext("webgl", { alpha: true });
     if (!gl) {
       alert("WebGL not supported");
       throw new Error("WebGL not supported");
@@ -313,6 +313,11 @@ vec3 col = glass * inside;
 
 
     function draw(tms) {
+
+       gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  
       resize();
       const t = tms * 0.001;
 
