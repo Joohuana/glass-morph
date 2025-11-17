@@ -212,11 +212,13 @@ float blurAmount = uBlur * (1.0 - eraserMask);
         glass+=vec3(1.0,0.96,0.9)*spec*0.45;
 
    float glassEffect = inside * (1.0 - eraserMask);
-vec3 col = glass;
+// Change the final output to be transparent where there's no glass
+vec3 col = glass * inside;
+
 
         float vign=smoothstep(1.2,0.2,length((frag-0.5*res)/res.y));
         col*=mix(0.9,1.0,vign);
-        gl_FragColor=vec4(col,1.0);
+   gl_FragColor = vec4(col, inside);
       }
     `;
 
@@ -294,30 +296,7 @@ vec3 col = glass;
       new Uint8Array([0, 0, 0, 255])
     );
 
-    const DEFAULT_VIDEO = "";
-
-    let videoEl = null,
-      videoReady = false;
-
-    function setupVideo(src) {
-      if (videoEl) {
-        try { videoEl.pause(); } catch (_) {}
-      }
-      videoEl = document.createElement("video");
-      videoEl.crossOrigin = "anonymous";
-      videoEl.src = src;
-      videoEl.muted = true;
-      videoEl.loop = true;
-      videoEl.playsInline = true;
-      videoEl.autoplay = true;
-
-      videoEl.addEventListener("canplay", () => {
-        videoReady = true;
-        videoEl.play().catch(() => {});
-      });
-      videoEl.addEventListener("error", () => console.error("Video load error"));
-    }
-
+    
     // Hardcoded settings
     const glass = 0.6;      // uAmp
     const chromatic = 0.4;  // uChrom
@@ -337,18 +316,7 @@ vec3 col = glass;
       resize();
       const t = tms * 0.001;
 
-      if (videoEl && videoReady && !videoEl.paused && videoEl.readyState >= 2) {
-        gl.bindTexture(gl.TEXTURE_2D, tex0);
-        gl.texImage2D(
-          gl.TEXTURE_2D,
-          0,
-          gl.RGBA,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
-          videoEl
-        );
-      }
-
+      
       // Smooth mouse tracking with proper coordinate conversion
       let mouseTarget = [canvas.width / 2, canvas.height / 2];
       if (mouse.x !== undefined && mouse.y !== undefined) {
