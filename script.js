@@ -1,7 +1,8 @@
+
 // Device detection
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 const textElement = document.createElement('div');
-textElement.innerHTML = isMobile ? '↑ Swipe to reveal ↑' : 'Scroll to reveal';
+textElement.innerHTML = isMobile ? 'Swipe to reveal' : 'Scroll to reveal';
 Object.assign(textElement.style, {
   position: 'fixed',
   top: '50%',
@@ -31,43 +32,60 @@ let scrollProgress = 0;
 let targetScrollProgress = 0;
 const maxScroll = 1000; // Adjust based on your page content
 let hasInteracted = false;
+let isScrollLocked = true; // Start with scroll locked
 
+// Prevent default scroll behavior
+function preventDefaultScroll(e) {
+  if (isScrollLocked) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}
 
+// Add scroll prevention listeners
+window.addEventListener('wheel', preventDefaultScroll, { passive: false });
+window.addEventListener('touchmove', preventDefaultScroll, { passive: false });
+document.addEventListener('gesturestart', preventDefaultScroll);
+document.addEventListener('gesturechange', preventDefaultScroll);
+document.addEventListener('gestureend', preventDefaultScroll);
 
 function handleScroll(e) {
-  if (document.body.style.overflow === 'hidden') {
-    e.preventDefault();
-    
-    if (!hasInteracted) {
-      hasInteracted = true;
-      // Fade out text after first interaction
-      textElement.style.opacity = '0';
-      setTimeout(() => {
-        textElement.style.display = 'none';
-      }, 500);
+  if (!hasInteracted) {
+    hasInteracted = true;
+    // Fade out text after first interaction
+    textElement.style.opacity = '0';
+    setTimeout(() => {
+      textElement.style.display = 'none';
+    }, 500);
+  }
+  
+  if (isScrollLocked) {
+    // Only allow scroll progress to increase when locked
+    if (e.deltaY > 0) {
+      targetScrollProgress = Math.min(maxScroll, targetScrollProgress + e.deltaY * 0.5);
     }
-    
-    if (e.deltaY) {
-      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
-    }
+  } else {
+    // Allow normal scrolling when unlocked
+    targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
   }
 }
 
 function handleTouch(e) {
-  if (document.body.style.overflow === 'hidden') {
-    e.preventDefault(); // Add this line
-    
-    if (!hasInteracted) {
-      hasInteracted = true;
-      textElement.style.opacity = '0';
-      setTimeout(() => {
-        textElement.style.display = 'none';
-      }, 500);
-    }
-    
-    if (e.touches && e.touches.length > 0) {
-      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
-    }
+  if (!hasInteracted) {
+    hasInteracted = true;
+    textElement.style.opacity = '0';
+    setTimeout(() => {
+      textElement.style.display = 'none';
+    }, 500);
+  }
+  
+  if (isScrollLocked) {
+    // Only allow progress increase when locked
+    targetScrollProgress = Math.min(maxScroll, targetScrollProgress + 10);
+  } else {
+    // Allow normal progress when unlocked
+    targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
   }
 }
 
@@ -82,11 +100,10 @@ function handleClick() {
   }
 }
 
-window.addEventListener("click", handleClick);
-window.addEventListener("touchstart", handleClick);
-// Use non-passive event listeners to allow preventDefault
+// Update scroll and touch listeners to use passive: false for prevention
 window.addEventListener("wheel", handleScroll, { passive: false });
 window.addEventListener("touchmove", handleTouch, { passive: false });
+window.addEventListener("click", handleClick);
 
 function mousemove(e) {
   const rect = canvas.getBoundingClientRect();
@@ -410,8 +427,6 @@ const uScrollProgress = gl.getUniformLocation(prog, "uScrollProgress");
     let mouseSm = [canvas.width / 2, canvas.height / 2];
     let mouseFactorTarget = 0;
 
-// Prevent page scroll initially
-document.body.style.overflow = 'hidden';
 
 function draw(tms) {
   gl.clearColor(0, 0, 0, 0);
@@ -423,6 +438,19 @@ function draw(tms) {
   // Smooth scroll progress
   scrollProgress += (targetScrollProgress - scrollProgress) * 0.1;
 
+  // Check if scroll effect is nearly complete (90% threshold)
+  const scrollThreshold = maxScroll * 0.9;
+  if (scrollProgress >= scrollThreshold && isScrollLocked) {
+    isScrollLocked = false;
+    // Remove scroll prevention when effect is nearly complete
+    window.removeEventListener('wheel', preventDefaultScroll);
+    window.removeEventListener('touchmove', preventDefaultScroll);
+    document.removeEventListener('gesturestart', preventDefaultScroll);
+    document.removeEventListener('gesturechange', preventDefaultScroll);
+    document.removeEventListener('gestureend', preventDefaultScroll);
+    console.log('Scroll unlocked - effect nearly complete');
+  }
+
   // Smooth mouse tracking
   let mouseTarget = [canvas.width / 2, canvas.height / 2];
   if (mouse.x !== undefined && mouse.y !== undefined) {
@@ -433,16 +461,6 @@ function draw(tms) {
       canvas.height - (mouse.y * scaleY)
     ];
   }
-
-
-
-   // Check if 95% cleared and re-enable scrolling
-  if (scrollProgress > maxScroll * 0.95 && document.body.style.overflow === 'hidden') {
-    document.body.style.overflow = 'auto';
-    // Optional: Show a subtle indicator that scrolling is now enabled
-    console.log('Page scrolling enabled');
-  }
-
 
   const k = 1.0 - Math.exp(-0.25);
   mouseSm[0] += (mouseTarget[0] - mouseSm[0]) * k;
@@ -475,4 +493,4 @@ function draw(tms) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   requestAnimationFrame(draw);
 }
-
+requestAnimationFrame(draw);
