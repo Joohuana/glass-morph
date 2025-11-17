@@ -137,9 +137,9 @@ function hideOverlay() {
       if (canvas.parentNode) {
         canvas.parentNode.removeChild(canvas);
       }
-     // REDIRECT TO BLANK PAGE - This is the key!
-       const blankPage = 'data:text/html,<html style="pointer-events:none"><body style="pointer-events:none"></body></html>';
-    window.location.href = blankPage;
+  
+      // Change URL fragment to signal unlock
+  window.location.hash = 'unlocked';
     console.log('Redirected to pointer-events disabled page');
     }, 500);
   }
