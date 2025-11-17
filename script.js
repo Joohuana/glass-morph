@@ -473,4 +473,5 @@ function draw(tms) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   requestAnimationFrame(draw);
 }
-requestAnimationFrame(draw);
+
+}
