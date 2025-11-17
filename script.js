@@ -118,12 +118,22 @@ function hideOverlay() {
   isOverlayHidden = true;
   isScrollLocked = false;
   
-  console.log('Hiding overlay completely');
+  console.log('Hiding overlay and restoring scroll');
   
   // Stop the animation loop immediately
-if (animationId) {
+  if (animationId) {
     cancelAnimationFrame(animationId);
     animationId = null;
+  }
+  
+  // === ADD THIS CODE ===
+  // Disable pointer events on the iframe itself
+  if (window.frameElement) {
+    console.log('Disabling pointer events on iframe');
+    window.frameElement.style.pointerEvents = 'none';
+    
+    // Optional: Also make it invisible to clicks
+    window.frameElement.style.zIndex = '-1';
   }
   
   // Completely remove the canvas from DOM with transition
@@ -159,7 +169,6 @@ if (animationId) {
   
   // Force enable scrolling on body
   document.body.style.overflow = 'auto';
-  document.body.style.height = 'auto';
   document.body.style.position = 'static';
   document.documentElement.style.overflow = 'auto';
   document.documentElement.style.height = 'auto';
