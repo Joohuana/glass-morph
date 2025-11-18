@@ -204,20 +204,26 @@ function handleTouch(e) {
         startButton.style.display = 'block';
         console.log('Start button shown');
         
-        // Wait longer before restoring scroll
+        // Wait longer before restoring scroll - PHASE 2: Remove scroll prevention
         setTimeout(() => {
           isScrollLocked = false;
-          console.log('Scroll fully restored');
-        }, 2500); // Restore scroll 1.5 seconds after button appears
+          
+          // REMOVE SCROLL PREVENTION LISTENERS ONLY NOW
+          window.removeEventListener('wheel', preventDefaultScroll);
+          window.removeEventListener('touchmove', preventDefaultScroll);
+          document.removeEventListener('gesturestart', preventDefaultScroll);
+          document.removeEventListener('gesturechange', preventDefaultScroll);
+          document.removeEventListener('gestureend', preventDefaultScroll);
+          
+          console.log('Scroll fully restored and prevention removed');
+        }, 1500); // Restore scroll 1.5 seconds after button appears
         
       }, 800); // Show button 0.8 seconds after canvas removal
       
     }, 1000); // Remove canvas after 1 second fade
   }
   
-  // Remove event listeners immediately
-  window.removeEventListener('wheel', preventDefaultScroll);
-  window.removeEventListener('touchmove', preventDefaultScroll);
+  // Remove other event listeners immediately (keep scroll prevention for now)
   window.removeEventListener("wheel", handleScroll);
   window.removeEventListener("touchmove", handleTouch);
   window.removeEventListener("click", handleClick);
@@ -226,9 +232,6 @@ function handleTouch(e) {
   window.removeEventListener("mouseout", mouseout);
   window.removeEventListener("touchend", mouseout);
   window.removeEventListener("resize", resize);
-  document.removeEventListener('gesturestart', preventDefaultScroll);
-  document.removeEventListener('gesturechange', preventDefaultScroll);
-  document.removeEventListener('gestureend', preventDefaultScroll);
   
   // Remove text element
   if (textElement && textElement.parentNode) {
