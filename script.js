@@ -37,7 +37,7 @@
 
     // Create start button element
     const startButton = document.createElement('a');
-    startButton.href = 'https://elewrk.cargo.site/';
+    startButton.href = 'https://elewerk.cargo.site/5-el';
     startButton.className = 'start-button';
     startButton.style.display = 'none'; // Initially hidden
     startButton.innerHTML = `
@@ -121,72 +121,80 @@
     }
 
     function hideOverlay() {
-      if (isOverlayHidden) return;
-      
-      isOverlayHidden = true;
-      isScrollLocked = false;
-      
-      console.log('Hiding overlay and restoring scroll');
-      
-      // Stop the animation loop immediately
-      if (animationId) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
+  if (isOverlayHidden) return;
+  
+  isOverlayHidden = true;
+  // DON'T unlock scroll immediately - isScrollLocked = false;
+  
+  console.log('Hiding overlay and restoring scroll');
+  
+  // Stop the animation loop immediately
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+  
+  // Disable pointer events on your content
+  document.body.style.pointerEvents = 'none';
+  document.documentElement.style.pointerEvents = 'none';
+  
+  // Show the start button immediately
+  startButton.style.display = 'block';
+  
+  // Remove canvas with transition
+  if (canvas) {
+    canvas.style.transition = 'opacity 0.5s ease';
+    canvas.style.opacity = '0';
+    
+    setTimeout(() => {
+      // Remove canvas after fade out
+      if (canvas.parentNode) {
+        canvas.parentNode.removeChild(canvas);
       }
       
-      // Disable pointer events on your content
-      document.body.style.pointerEvents = 'none';
-      document.documentElement.style.pointerEvents = 'none';
+      // Change URL fragment to signal unlock
+      window.location.hash = 'unlocked';
+      console.log('Canvas removed and URL hash set to #unlocked');
       
-      // Show the start button
-      startButton.style.display = 'block';
+      // DELAY scroll restoration until after button is blended in
+      setTimeout(() => {
+        isScrollLocked = false;
+        console.log('Scroll restored after button blend-in');
+      }, 1000); // Adjust this delay to match your button animation timing
       
-      // Remove canvas with transition
-      if (canvas) {
-        canvas.style.transition = 'opacity 0.5s ease';
-        canvas.style.opacity = '0';
-        
-        setTimeout(() => {
-          // Remove canvas after fade out
-          if (canvas.parentNode) {
-            canvas.parentNode.removeChild(canvas);
-          }
-          
-          // Change URL fragment to signal unlock
-          window.location.hash = 'unlocked';
-          console.log('Canvas removed and URL hash set to #unlocked');
-        }, 500);
-      }
-      
-      window.removeEventListener('wheel', preventDefaultScroll);
-      window.removeEventListener('touchmove', preventDefaultScroll);
-      window.removeEventListener("wheel", handleScroll);
-      window.removeEventListener("touchmove", handleTouch);
-      window.removeEventListener("click", handleClick);
-      window.removeEventListener("mousemove", mousemove);
-      window.removeEventListener("touchmove", touchmove); // Fixed: removed duplicate
-      window.removeEventListener("mouseout", mouseout);
-      window.removeEventListener("touchend", mouseout);
-      window.removeEventListener("resize", resize);
-      document.removeEventListener('gesturestart', preventDefaultScroll);
-      document.removeEventListener('gesturechange', preventDefaultScroll);
-      document.removeEventListener('gestureend', preventDefaultScroll);
-      
-      // Remove text element
-      if (textElement && textElement.parentNode) {
-        textElement.parentNode.removeChild(textElement);
-      }
-      
-      // Make the entire document body shrink/collapse
-      document.body.style.width = '0';
-      document.body.style.height = '0';
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.width = '0';
-      document.documentElement.style.height = '0';
+    }, 500);
+  }
+  
+  // Remove event listeners immediately
+  window.removeEventListener('wheel', preventDefaultScroll);
+  window.removeEventListener('touchmove', preventDefaultScroll);
+  window.removeEventListener("wheel", handleScroll);
+  window.removeEventListener("touchmove", handleTouch);
+  window.removeEventListener("click", handleClick);
+  window.removeEventListener("mousemove", mousemove);
+  window.removeEventListener("touchmove", touchmove);
+  window.removeEventListener("mouseout", mouseout);
+  window.removeEventListener("touchend", mouseout);
+  window.removeEventListener("resize", resize);
+  document.removeEventListener('gesturestart', preventDefaultScroll);
+  document.removeEventListener('gesturechange', preventDefaultScroll);
+  document.removeEventListener('gestureend', preventDefaultScroll);
+  
+  // Remove text element
+  if (textElement && textElement.parentNode) {
+    textElement.parentNode.removeChild(textElement);
+  }
+  
+  // Make the entire document body shrink/collapse
+  document.body.style.width = '0';
+  document.body.style.height = '0';
+  document.body.style.overflow = 'hidden';
+  document.documentElement.style.width = '0';
+  document.documentElement.style.height = '0';
 
-      // Force reflow to ensure styles are applied
-      document.body.getBoundingClientRect();
-    }
+  // Force reflow to ensure styles are applied
+  document.body.getBoundingClientRect();
+}
 
     function mousemove(e) {
       if (isOverlayHidden) return;
