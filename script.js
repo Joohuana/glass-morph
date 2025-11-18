@@ -593,7 +593,7 @@ gl_FragColor = vec4(col, finalAlpha);
       // Smooth scroll progress
       scrollProgress += (targetScrollProgress - scrollProgress) * 0.1;
  // Show hero block at 70% scroll progress
-  if (scrollProgress >= maxScroll * 0.7 && heroBlock.style.display === 'none') {
+  if (scrollProgress >= maxScroll * 0.5 && heroBlock.style.display === 'none') {
     heroBlock.style.display = 'flex';
     console.log('Hero block shown at 70%');
   }

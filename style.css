@@ -1,17 +1,14 @@
 :root {
     --bg: transparent;
-    --txt: #f4f4f6;
-    --accent: #ff9a9c;
-    --blur: 12px;
+    --txt: #F5F5F3;
+      --blur: 12px;
 }
 
 html, body {
     height: 100%;
     margin: 0;
     color: var(--txt);
-    font: 12px/1.2 -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter,
-        system-ui, sans-serif;
-    scroll-behavior: smooth;
+       scroll-behavior: smooth;
 }
 
 #c {
@@ -138,7 +135,7 @@ html, body {
 
 .hero-block {
     position: fixed;
-    top: 45%;
+    top: 38%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 0;
@@ -151,17 +148,25 @@ html, body {
     pointer-events: none;
 }
 
+
 .hero-block h1 {
-    font-size: 3.5rem;
+    font-size: 5.5rem;
     letter-spacing: -1px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400; /* Regular weight for Inter */
+    opacity: 0;
+    animation: slideInFromLeft 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    animation-delay: 0.3s; /* Slight delay for smooth appearance */
 }
+
 
 .hero-block h1 b {
     font-weight: 800;
 }
 
 .hero-block h1 i {
-    font-style: italic;
+   font-weight: 300;
+  font-style: normal;
 }
 
 .accent {
@@ -169,13 +174,29 @@ html, body {
     overflow: hidden;
     font-size: 1.2rem;
     letter-spacing: 0.5px;
+    font-family: 'Plus Jakarta Sans', sans-serif; /* Changed to Plus Jakarta Sans */
+  font-weight: 300; /* Light weight for the subtitle */
+    font-style: italic;
+   margin-top: -40px;
 }
 
 .accent i {
     display: inline-block;
     transform: translateY(100%);
     animation: slideUp 0.8s cubic-bezier(.25,.46,.45,.94) forwards;
-    animation-delay: 1.1s;
+    animation-delay: 1.8s;
+}
+
+/* Soft left to right fade-in animation */
+@keyframes slideInFromLeft {
+    0% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @keyframes slideUp {
