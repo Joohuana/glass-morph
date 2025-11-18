@@ -35,18 +35,9 @@
     let isOverlayHidden = false;
     let animationId = null;
 
-    // Create start button element
-    const startButton = document.createElement('a');
-    startButton.href = 'https://elewerk.cargo.site/5-el';
-    startButton.className = 'start-button';
-    startButton.style.display = 'none'; // Initially hidden
-    startButton.innerHTML = `
-      <span class="button-6-1">
-        <span>S</span><span>T</span><span>A</span><span>R</span><span>T</span> 
-        <span>D</span><span>I</span><span>A</span><span>G</span><span>N</span><span>O</span><span>S</span><span>T</span><span>I</span><span>C</span>
-      </span>
-    `;
-    document.body.appendChild(startButton);
+   // Get elements that are now in HTML
+const startButton = document.querySelector('.start-button');
+const heroBlock = document.querySelector('.hero-block');
 
     // Prevent default scroll behavior
     function preventDefaultScroll(e) {
@@ -88,8 +79,8 @@ function handleScroll(e) {
     } else if (isScrollingUp) {
       // For scroll up at beginning, add arrow below original text
       textElement.innerHTML = isMobile ? 
-        '↑ Swipe to unlock<br><div style="text-align:center;margin-top:10px;font-size:24px">↓</div>' : 
-        'Scroll to unlock<br><div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
+        '<div style="text-align:center;margin-top:10px;font-size:24px">↑</div>' : 
+        '<div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
       textElement.style.opacity = '1';
       textElement.style.display = 'block';
     }
@@ -101,8 +92,8 @@ function handleScroll(e) {
       // Show text with arrow when scrolled all the way up (progress = 0)
       if (targetScrollProgress === 0 && textElement.style.display === 'none') {
         textElement.innerHTML = isMobile ? 
-          '↑ Swipe to unlock<br><div style="text-align:center;margin-top:10px;font-size:24px">↓</div>' : 
-          'Scroll to unlock<br><div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
+          '<div style="text-align:center;margin-top:10px;font-size:24px">↑</div>' : 
+          '<div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
         textElement.style.display = 'block';
         textElement.style.opacity = '1';
       }
@@ -176,13 +167,12 @@ function handleTouch(e) {
       }
     }
 
-    function hideOverlay() {
+  function hideOverlay() {
   if (isOverlayHidden) return;
   
   isOverlayHidden = true;
-  // DON'T unlock scroll immediately - isScrollLocked = false;
   
-  console.log('Hiding overlay and restoring scroll');
+  console.log('Hiding overlay and starting unlock sequence');
   
   // Stop the animation loop immediately
   if (animationId) {
@@ -190,16 +180,13 @@ function handleTouch(e) {
     animationId = null;
   }
   
-  // Disable pointer events on your content
+  // Disable pointer events
   document.body.style.pointerEvents = 'none';
   document.documentElement.style.pointerEvents = 'none';
   
-  // Show the start button immediately
-  startButton.style.display = 'block';
-  
   // Remove canvas with transition
   if (canvas) {
-    canvas.style.transition = 'opacity 0.5s ease';
+    canvas.style.transition = 'opacity 1s ease';
     canvas.style.opacity = '0';
     
     setTimeout(() => {
@@ -210,16 +197,22 @@ function handleTouch(e) {
       
       // Change URL fragment to signal unlock
       window.location.hash = 'unlocked';
-      console.log('Canvas removed and URL hash set to #unlocked');
+      console.log('Canvas removed - glass morph layer gone');
       
-      // DELAY scroll restoration until after button is blended in
+      // Wait a bit then show the button
       setTimeout(() => {
-        isScrollLocked = false;
-        console.log('Scroll restored after button blend-in');
-      }, 500); // Adjust this delay to match your button animation timing
+        startButton.style.display = 'block';
+        console.log('Start button shown');
+        
+        // Wait longer before restoring scroll
+        setTimeout(() => {
+          isScrollLocked = false;
+          console.log('Scroll fully restored');
+        }, 1500); // Restore scroll 1.5 seconds after button appears
+        
+      }, 800); // Show button 0.8 seconds after canvas removal
       
-    }, 2000);
-    
+    }, 1000); // Remove canvas after 1 second fade
   }
   
   // Remove event listeners immediately
@@ -583,31 +576,35 @@ gl_FragColor = vec4(col, finalAlpha);
     let mouseFactorTarget = 0;
 
     function draw(tms) {
-      if (isOverlayHidden) {
-        // Stop the animation loop if overlay is hidden
-        if (animationId) {
-          cancelAnimationFrame(animationId);
-          animationId = null;
-        }
-        return;
-      }
-      
-      gl.clearColor(0, 0, 0, 0);
-      gl.clear(gl.COLOR_BUFFER_BIT);
-      
-      resize();
-      const t = tms * 0.001;
+  if (isOverlayHidden) {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+    return;
+  }
+  
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  
+  resize();
+  const t = tms * 0.001;
 
       // Smooth scroll progress
       scrollProgress += (targetScrollProgress - scrollProgress) * 0.1;
+ // Show hero block at 70% scroll progress
+  if (scrollProgress >= maxScroll * 0.7 && heroBlock.style.display === 'none') {
+    heroBlock.style.display = 'flex';
+    console.log('Hero block shown at 70%');
+  }
 
-      // Check if scroll effect is nearly complete (90% threshold)
-      const scrollThreshold = maxScroll * 0.9;
-      if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
-          console.log('Scroll complete - hiding overlay');
-        hideOverlay();
-        return; // Stop this frame
-      }
+  // Check if scroll effect is nearly complete (90% threshold)
+  const scrollThreshold = maxScroll * 0.9;
+  if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
+    console.log('Scroll complete - hiding overlay');
+    hideOverlay();
+    return;
+  }
 
       // Smooth mouse tracking
       let mouseTarget = [canvas.width / 2, canvas.height / 2];
