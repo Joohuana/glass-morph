@@ -599,13 +599,12 @@ gl_FragColor = vec4(col, finalAlpha);
   }
 
   // Check if scroll effect is nearly complete (90% threshold)
-  const scrollThreshold = maxScroll;
+  const scrollThreshold = maxScroll * 0.9;
   if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
     console.log('Scroll complete - hiding overlay');
     hideOverlay();
     return;
   }
-
       // Smooth mouse tracking
       let mouseTarget = [canvas.width / 2, canvas.height / 2];
       if (mouse.x !== undefined && mouse.y !== undefined) {
