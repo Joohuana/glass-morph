@@ -64,48 +64,104 @@
     document.addEventListener('gesturechange', preventDefaultScroll);
     document.addEventListener('gestureend', preventDefaultScroll);
 
-    function handleScroll(e) {
-      if (isOverlayHidden) return; // Ignore if overlay is already hidden
-      
-      if (!hasInteracted) {
-        hasInteracted = true;
-        // Fade out text after first interaction
-        textElement.style.opacity = '0';
-        setTimeout(() => {
-          textElement.style.display = 'none';
-        }, 500);
-      }
-      
-      if (isScrollLocked) {
-        // Only allow scroll progress to increase when locked
-        if (e.deltaY > 0) {
-          targetScrollProgress = Math.min(maxScroll, targetScrollProgress + e.deltaY * 0.5);
-        }
-      } else {
-        // Allow normal scrolling when unlocked
-        targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
-      }
-    }
 
-    function handleTouch(e) {
-      if (isOverlayHidden) return; // Ignore if overlay is already hidden
+function handleScroll(e) {
+  if (isOverlayHidden) return; // Ignore if overlay is already hidden
+  
+  const previousProgress = targetScrollProgress;
+  const isScrollingDown = e.deltaY > 0;
+  const isScrollingUp = e.deltaY < 0;
+  
+  if (!hasInteracted) {
+    // At the very beginning, only allow scrolling down
+    if (isScrollingDown) {
+      hasInteracted = true;
+      // Remove arrow and fade out text
+      textElement.innerHTML = isMobile ? '↑ Swipe to unlock' : 'Scroll to unlock';
+      textElement.style.opacity = '0';
+      setTimeout(() => {
+        textElement.style.display = 'none';
+      }, 500);
       
-      if (!hasInteracted) {
-        hasInteracted = true;
+      // Allow progress increase for scroll down
+      targetScrollProgress = Math.min(maxScroll, targetScrollProgress + e.deltaY * 0.5);
+    } else if (isScrollingUp) {
+      // For scroll up at beginning, add arrow below original text
+      textElement.innerHTML = isMobile ? 
+        '↑ Swipe to unlock<br><div style="text-align:center;margin-top:10px;font-size:24px">↓</div>' : 
+        'Scroll to unlock<br><div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
+      textElement.style.opacity = '1';
+      textElement.style.display = 'block';
+    }
+  } else {
+    // After first interaction, allow both directions
+    if (isScrollLocked) {
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
+      
+      // Show text with arrow when scrolled all the way up (progress = 0)
+      if (targetScrollProgress === 0 && textElement.style.display === 'none') {
+        textElement.innerHTML = isMobile ? 
+          '↑ Swipe to unlock<br><div style="text-align:center;margin-top:10px;font-size:24px">↓</div>' : 
+          'Scroll to unlock<br><div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
+        textElement.style.display = 'block';
+        textElement.style.opacity = '1';
+      }
+      // Hide text when starting to scroll down (progress > 0)
+      else if (targetScrollProgress > 0 && previousProgress === 0 && textElement.style.opacity !== '0') {
         textElement.style.opacity = '0';
         setTimeout(() => {
           textElement.style.display = 'none';
         }, 500);
       }
-      
-      if (isScrollLocked) {
-        // Only allow progress increase when locked
-        targetScrollProgress = Math.min(maxScroll, targetScrollProgress + 10);
-      } else {
-        // Allow normal progress when unlocked
-        targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
-      }
+    } else {
+      // Allow normal scrolling when unlocked
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + e.deltaY * 0.5));
     }
+  }
+}
+
+function handleTouch(e) {
+  if (isOverlayHidden) return; // Ignore if overlay is already hidden
+  
+  const previousProgress = targetScrollProgress;
+  
+  if (!hasInteracted) {
+    hasInteracted = true;
+    // Remove arrow and fade out text
+    textElement.innerHTML = isMobile ? '↑ Swipe to unlock' : 'Scroll to unlock';
+    textElement.style.opacity = '0';
+    setTimeout(() => {
+      textElement.style.display = 'none';
+    }, 500);
+    
+    // For touch, we'll assume it's a scroll down gesture
+    targetScrollProgress = Math.min(maxScroll, targetScrollProgress + 10);
+  } else {
+    if (isScrollLocked) {
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
+      
+      // Show text with arrow when scrolled all the way up (progress = 0)
+      if (targetScrollProgress === 0 && textElement.style.display === 'none') {
+        textElement.innerHTML = isMobile ? 
+          '↑ Swipe to unlock<br><div style="text-align:center;margin-top:10px;font-size:24px">↓</div>' : 
+          'Scroll to unlock<br><div style="text-align:center;margin-top:10px;font-size:20px">↓</div>';
+        textElement.style.display = 'block';
+        textElement.style.opacity = '1';
+      }
+      // Hide text when starting to scroll down (progress > 0)
+      else if (targetScrollProgress > 0 && previousProgress === 0 && textElement.style.opacity !== '0') {
+        textElement.style.opacity = '0';
+        setTimeout(() => {
+          textElement.style.display = 'none';
+        }, 500);
+      }
+    } else {
+      targetScrollProgress = Math.min(maxScroll, Math.max(0, targetScrollProgress + 10));
+    }
+  }
+}
+
+
 
     // Add click/tap to dismiss text on mobile
     function handleClick() {
@@ -160,9 +216,10 @@
       setTimeout(() => {
         isScrollLocked = false;
         console.log('Scroll restored after button blend-in');
-      }, 1000); // Adjust this delay to match your button animation timing
+      }, 500); // Adjust this delay to match your button animation timing
       
-    }, 500);
+    }, 2000);
+    
   }
   
   // Remove event listeners immediately
@@ -431,7 +488,7 @@
 
         float vign=smoothstep(1.2,0.2,length((frag-0.5*res)/res.y));
         col*=mix(0.9,1.0,vign);
-        gl_FragColor = vec4(col, finalAlpha);
+gl_FragColor = vec4(col, finalAlpha);
       }
     `;
 
