@@ -208,7 +208,7 @@ function handleTouch(e) {
         setTimeout(() => {
           isScrollLocked = false;
           console.log('Scroll fully restored');
-        }, 1500); // Restore scroll 1.5 seconds after button appears
+        }, 2500); // Restore scroll 1.5 seconds after button appears
         
       }, 800); // Show button 0.8 seconds after canvas removal
       
@@ -599,7 +599,7 @@ gl_FragColor = vec4(col, finalAlpha);
   }
 
   // Check if scroll effect is nearly complete (90% threshold)
-  const scrollThreshold = maxScroll * 0.9;
+  const scrollThreshold = maxScroll;
   if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
     console.log('Scroll complete - hiding overlay');
     hideOverlay();
