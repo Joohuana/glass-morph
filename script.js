@@ -39,14 +39,15 @@
 const startButton = document.querySelector('.start-button');
 const heroBlock = document.querySelector('.hero-block');
 
-    // Prevent default scroll behavior
-    function preventDefaultScroll(e) {
-      if (isScrollLocked && !isOverlayHidden) {
-        e.preventDefault();
-        e.stopPropagation();
-        return false;
-      }
-    }
+  // Prevent default scroll behavior
+function preventDefaultScroll(e) {
+  // Always prevent scroll if isScrollLocked is true, regardless of isOverlayHidden
+  if (isScrollLocked) {
+    e.preventDefault();
+    e.stopPropagation();
+    return false;
+  }
+}
 
     // Add scroll prevention listeners
     window.addEventListener('wheel', preventDefaultScroll, { passive: false });
@@ -602,7 +603,7 @@ gl_FragColor = vec4(col, finalAlpha);
   }
 
   // Check if scroll effect is nearly complete (90% threshold)
-  const scrollThreshold = maxScroll * 0.9;
+  const scrollThreshold = maxScroll * 0.99;
   if (scrollProgress >= scrollThreshold && isScrollLocked && !isOverlayHidden) {
     console.log('Scroll complete - hiding overlay');
     hideOverlay();
